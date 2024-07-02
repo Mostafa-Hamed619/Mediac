@@ -1,10 +1,15 @@
 ﻿using MediacApi.Data.Entities;
+using MediacApi.Services.IRepositories;
 using MediacBack.DTOs.Posts;
 using MediacBack.HelperClasses;
 using MediacBack.Services.IRepositories;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ActionConstraints;
+using Microsoft.Extensions.Caching.Memory;
+using Serilog;
+using Serilog.Core;
 using System.Reflection.Metadata.Ecma335;
+using System.Security.Claims;
 
 namespace MediacBack.Controllers
 {
@@ -12,48 +17,103 @@ namespace MediacBack.Controllers
     [Route("api/[controller]")]
     public class PostController : ControllerBase
     {
+        private const string PostCacheKey = "PostList";
         private readonly IPostRepository postRepo;
         private readonly IFileRespository fileRepo;
+        private readonly ihttpAccessor context;
+        private readonly IMemoryCache cache;
+        private static readonly SemaphoreSlim semaphore = new SemaphoreSlim(1, 1);
 
-        public PostController(IPostRepository postRepo,IFileRespository fileRepo)
+        public string user { get; set; }
+
+        public PostController(IPostRepository postRepo,IFileRespository fileRepo, ihttpAccessor context,IMemoryCache cache)
         {
             this.postRepo = postRepo;
             this.fileRepo = fileRepo;
+            this.context = context;
+            this.cache = cache;
         }
         [HttpGet("get-posts/{page}")]
         public async Task<IActionResult> Posts(int page)
         {
+            if(cache.TryGetValue(PostCacheKey, out IEnumerable<Post>? posts)) 
+            {
+                Log.Information("Posts found in cache");
+            }
+            else
+            {
+                try
+                {
+                    await semaphore.WaitAsync();
+                    if (cache.TryGetValue(PostCacheKey, out posts))
+                    {
+                        Log.Information("Posts found in cache");
+                    }
+                    else
+                    {
+                        Log.Information("Posts not found in  cahce.Fetching from database.");
+
+                        posts = await postRepo.Paginationposts(page);
+
+                        var cacheEntryOptions = new MemoryCacheEntryOptions
+                        {
+                            SlidingExpiration = TimeSpan.FromSeconds(60),
+                            AbsoluteExpiration = DateTime.Now.AddHours(1),
+                            Priority = CacheItemPriority.Normal,
+                            Size = 1
+                        };
+
+                        cache.Set(PostCacheKey, posts, cacheEntryOptions);
+                    }
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
+                //and to remove the cache use 
+               // cache.Remove(PostCacheKey); at any endpoint.
+            }
+            user = User.FindFirst(ClaimTypes.Email)?.Value;
             
-            var posts = await postRepo.Paginationposts(page);
-            
-            //var result = await postRepo.getAllPosts();
-            
-            if (posts != null) return Ok(posts);
+            if (posts != null) 
+            {
+                Log.Debug($"{user} has got to see the posts of page {page}");
+                return Ok(posts);
+            }
             else return Ok("No posts yet");
         }
 
-        [HttpGet("get-post/{id}")]
+        [HttpGet("get-post/{id:guid}")]
         [ActionName("GetPost")]
         public async Task<ActionResult<Post>> GetPost(Guid Id)
         {
+            user = context.GetContext().HttpContext.User.FindFirst(ClaimTypes.Email)?.Value;
             var result = await postRepo.getPostAsync(Id);
-            if (result != null) return Ok(result);
-            else return NotFound($"No item with Id {Id}" );
+            if (result != null)
+            {
+                Log.Debug($"{user} has see post of name {result.PostName}");
+                return Ok(result);
+            }
+            else return NotFound($"No item with Id {Id}");
         }
 
-        [HttpDelete("delete-post/{id}")]
+        [HttpDelete("delete-post/{id:guid}")]
         public async Task<IActionResult> DeletePost(Guid Id) 
         {
+            user = context.GetContext().HttpContext.User.FindFirst(ClaimTypes.Email)?.Value;
+            var result = await postRepo.getPostAsync(Id);
+            Log.Debug($"{user} has just deleted post of name {result.PostName}");
             await postRepo.DeletePostAsync(Id);
             return Ok("Post has been deleted");
         }
 
         [HttpPost("Add-post")]
-        public async Task<IActionResult> Post([FromForm]addPostDto model)
+        public async Task<IActionResult> AddPost([FromForm]addPostDto model)
         {
             if(!ModelState.IsValid) return BadRequest("Invalied process");
             else
             {
+                user = context.GetContext().HttpContext.User.FindFirst(ClaimTypes.Email)?.Value;
                 Guid BlogId = await postRepo.GetBlogId(model.BlogName);
                 Post newPost = new Post()
                 {
@@ -65,7 +125,7 @@ namespace MediacBack.Controllers
                     visible = model.visible,
                     Refrences = model.Refrences,
                     BlogNumber = BlogId,
-
+                    AuthorId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
                 };
                 Guid Postid = new Guid();
 
@@ -81,10 +141,18 @@ namespace MediacBack.Controllers
                     }
                 }
 
-                await postRepo.AddPostAsync(newPost,BlogId);
-                //  return CreatedAtAction(nameof(GetPost), new { id = newPost.Id }, newPost);
-                return Ok(newPost);
+                await postRepo.AddPostAsync(newPost);
+                Log.Debug($"{user} has just added new post of name {model.PostName}");
+                return CreatedAtAction(nameof(GetPost), new { id = newPost.Id }, newPost);
+                
             }
+        }
+
+        [HttpGet]
+        public async Task<ActionResult<Guid>> getId(string Name)
+        {
+            var result = postRepo.Getid(Name);
+            return Ok(result);
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using MediacApi.Data.Entities;
+using MediacApi.DTOs.Blogs;
 
 
 namespace MediacBack.Services.IRepositories
@@ -7,7 +8,9 @@ namespace MediacBack.Services.IRepositories
     {
         public Task AddBlog(Blog blog);
 
-        public Task<IEnumerable<Blog>> GetAll();
+        public Task<IEnumerable<getBlogDto>> GetAll();
+
+        public Task<Blog> getBlog(Guid id);
 
         public Task followBlog(Guid id);
 

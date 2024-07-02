@@ -8,7 +8,7 @@ namespace MediacBack.Services.IRepositories
 
         public Task<Post> getPostAsync(Guid id);
 
-        public Task AddPostAsync(Post post,Guid BlogId);
+        public Task AddPostAsync(Post post);
 
         public Task DeletePostAsync(Guid id);
 
@@ -19,5 +19,7 @@ namespace MediacBack.Services.IRepositories
         public Task<int> getPostCount();
 
         public Task<IEnumerable<Post>> Paginationposts(int page);
+
+        public Task<Guid> Getid(string Name);
     }
 }

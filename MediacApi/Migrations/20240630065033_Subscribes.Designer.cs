@@ -4,6 +4,7 @@ using MediacApi.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MediacApi.Migrations
 {
     [DbContext(typeof(MediacDbContext))]
-    partial class MediacDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240630065033_Subscribes")]
+    partial class Subscribes
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -88,6 +91,9 @@ namespace MediacApi.Migrations
                     b.Property<Guid>("BlogNumber")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("FollowersId")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("PostName")
                         .HasColumnType("nvarchar(max)");
 
@@ -131,12 +137,12 @@ namespace MediacApi.Migrations
                     b.Property<string>("FollowerId")
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<Guid>("BlogId")
+                    b.Property<Guid>("PostId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.HasKey("FollowerId", "BlogId");
+                    b.HasKey("FollowerId", "PostId");
 
-                    b.HasIndex("BlogId");
+                    b.HasIndex("PostId");
 
                     b.ToTable("subscribes");
                 });
@@ -343,19 +349,19 @@ namespace MediacApi.Migrations
 
             modelBuilder.Entity("MediacApi.Data.Entities.Subscribe", b =>
                 {
-                    b.HasOne("MediacApi.Data.Entities.Blog", "blog")
-                        .WithMany("subscribes")
-                        .HasForeignKey("BlogId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("MediacApi.Data.Entities.User", "user")
                         .WithMany("subscribes")
                         .HasForeignKey("FollowerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("blog");
+                    b.HasOne("MediacApi.Data.Entities.Post", "post")
+                        .WithMany("subscribes")
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("post");
 
                     b.Navigation("user");
                 });
@@ -363,7 +369,10 @@ namespace MediacApi.Migrations
             modelBuilder.Entity("MediacApi.Data.Entities.Blog", b =>
                 {
                     b.Navigation("posts");
+                });
 
+            modelBuilder.Entity("MediacApi.Data.Entities.Post", b =>
+                {
                     b.Navigation("subscribes");
                 });
 

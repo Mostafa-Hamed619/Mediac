@@ -24,7 +24,11 @@ namespace MediacApi.Data.Entities
         
         public Guid BlogNumber { get; set; }
 
-
+        [JsonIgnore]
         public Blog Blog { get; set; }
+
+        public string AuthorId { get; set; }
+
+      
     }
 }

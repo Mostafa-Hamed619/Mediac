@@ -4,6 +4,7 @@ using MediacApi.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MediacApi.Migrations
 {
     [DbContext(typeof(MediacDbContext))]
-    partial class MediacDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240630071451_FixBlogSubscribeMigration")]
+    partial class FixBlogSubscribeMigration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -55,6 +58,9 @@ namespace MediacApi.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("FollowersId")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("blogDescription")
                         .HasColumnType("nvarchar(max)");

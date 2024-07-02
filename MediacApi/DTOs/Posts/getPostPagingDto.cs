@@ -4,7 +4,7 @@ using MediacApi.Data.Entities;
 
 namespace MediacBack.DTOs.Posts
 {
-    public class getProductDto
+    public class getPostPagingDto
     {
         public List<Post> Posts { get; set; } = new List<Post>();
 

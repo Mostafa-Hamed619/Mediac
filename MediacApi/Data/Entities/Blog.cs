@@ -15,5 +15,7 @@
         public int followers {  get; set; }
 
         public ICollection<Post> posts { get; set; } = new List<Post>();
+
+        public ICollection<Subscribe> subscribes { get; set; }
     }
 }

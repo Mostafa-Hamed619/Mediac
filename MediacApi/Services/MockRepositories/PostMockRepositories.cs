@@ -14,39 +14,58 @@ namespace MediacBack.Services.MockRepositories
             this._db = db;
         }
 
-        public Task AddPostAsync(Post post, Guid BlogId)
+        public async Task AddPostAsync(Post post)
         {
-            throw new NotImplementedException();
+            await _db.AddAsync(post);
+            await _db.SaveChangesAsync();
         }
 
-        public Task DeletePostAsync(Guid id)
+        public async Task DeletePostAsync(Guid id)
         {
-            throw new NotImplementedException();
+            var Post = await _db.Posts.FindAsync(id);
+            _db.Posts.Remove(Post);
+            await _db.SaveChangesAsync();
         }
 
-        public Task<IEnumerable<Post>> getAllPosts()
+        public async Task<IEnumerable<Post>> getAllPosts()
         {
-            throw new NotImplementedException();
+            var result = await _db.Posts.ToListAsync();
+            return result;
         }
 
-        public Task<Guid> GetBlogId(string blogName)
+        public async Task<Guid> GetBlogId(string blogName)
         {
-            throw new NotImplementedException();
+            var result = await _db.Blogs.FirstOrDefaultAsync(x => x.blogName == blogName);
+            return result.Id;
         }
 
-        public Task<Post> getPostAsync(Guid id)
+        public async Task<Guid> Getid(string Name)
         {
-            throw new NotImplementedException();
+            var result = await _db.Posts.FirstOrDefaultAsync(x => x.PostName == Name);
+            return result.Id;
         }
 
-        public Task<int> getPostCount()
+        public async Task<Post> getPostAsync(Guid id)
         {
-            throw new NotImplementedException();
+            var Post = await _db.Posts.FirstOrDefaultAsync(x => x.Id == id);
+            return Post;
         }
 
-        public Task<IEnumerable<Post>> Paginationposts(int page)
+        public async Task<int> getPostCount()
         {
-            throw new NotImplementedException();
+            var Count = await _db.Posts.CountAsync();
+            return Count;
+        }
+
+        public async Task<IEnumerable<Post>> Paginationposts(int page)
+        {
+            float pageResult = 5f;
+
+            var pageSize = Math.Ceiling(await _db.Posts.CountAsync() / pageResult);
+
+            var result = await _db.Posts.Skip((page - 1) * (int)pageResult).Take((int)pageResult).ToListAsync();
+
+            return result;
         }
 
         public Task UpdatePostAsync(Post post)

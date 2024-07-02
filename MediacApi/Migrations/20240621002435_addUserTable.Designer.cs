@@ -4,6 +4,7 @@ using MediacApi.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MediacApi.Migrations
 {
     [DbContext(typeof(MediacDbContext))]
-    partial class MediacDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240621002435_addUserTable")]
+    partial class addUserTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,34 +24,6 @@ namespace MediacApi.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
-
-            modelBuilder.Entity("MediacApi.Data.Entities.AuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Changes")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("EntityType")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("TimeStamp")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("User")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("AuditLogs");
-                });
 
             modelBuilder.Entity("MediacApi.Data.Entities.Blog", b =>
                 {
@@ -124,21 +99,6 @@ namespace MediacApi.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Posts");
-                });
-
-            modelBuilder.Entity("MediacApi.Data.Entities.Subscribe", b =>
-                {
-                    b.Property<string>("FollowerId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<Guid>("BlogId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("FollowerId", "BlogId");
-
-                    b.HasIndex("BlogId");
-
-                    b.ToTable("subscribes");
                 });
 
             modelBuilder.Entity("MediacApi.Data.Entities.User", b =>
@@ -341,37 +301,14 @@ namespace MediacApi.Migrations
                     b.Navigation("Blog");
                 });
 
-            modelBuilder.Entity("MediacApi.Data.Entities.Subscribe", b =>
-                {
-                    b.HasOne("MediacApi.Data.Entities.Blog", "blog")
-                        .WithMany("subscribes")
-                        .HasForeignKey("BlogId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("MediacApi.Data.Entities.User", "user")
-                        .WithMany("subscribes")
-                        .HasForeignKey("FollowerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("blog");
-
-                    b.Navigation("user");
-                });
-
             modelBuilder.Entity("MediacApi.Data.Entities.Blog", b =>
                 {
                     b.Navigation("posts");
-
-                    b.Navigation("subscribes");
                 });
 
             modelBuilder.Entity("MediacApi.Data.Entities.User", b =>
                 {
                     b.Navigation("posts");
-
-                    b.Navigation("subscribes");
                 });
 #pragma warning restore 612, 618
         }

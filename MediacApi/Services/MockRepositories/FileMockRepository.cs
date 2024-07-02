@@ -40,7 +40,7 @@ namespace MediacBack.Services.MockRepositories
                 var stream = new FileStream(filePath, FileMode.Create);
                 image.CopyTo(stream);
                 stream.Close();
-                return new Tuple<int, string>(1, newFileName); ;
+                return new Tuple<int, string>(1, newFileName);
             }
             catch (Exception ex)
             {

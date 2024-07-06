@@ -22,6 +22,7 @@ namespace MediacApi.Data
         public DbSet<Blog> Blogs { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
         public DbSet<Subscribe> subscribes { get; set; }
+        public DbSet<Followers> followers { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -40,6 +41,9 @@ namespace MediacApi.Data
 
             modelBuilder.Entity<Subscribe>()
                 .HasKey(e => new { e.FollowerId, e.BlogId });
+
+            modelBuilder.Entity<Followers>()
+                .HasKey(e => new { e.FollowerUserId, e.FolloweeUserId });
            
             modelBuilder.Entity<Post>()
                 .HasOne(b => b.Blog)
@@ -60,6 +64,18 @@ namespace MediacApi.Data
                 .HasOne(s => s.user)
                 .WithMany(u => u.subscribes)
                 .HasForeignKey(s => s.FollowerId);
+
+            modelBuilder.Entity<Followers>()
+                .HasOne(f => f.FollowerUser)
+                .WithMany(u => u.followees)
+                .HasForeignKey(f => f.FollowerUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Followers>()
+                .HasOne(f => f.FolloweeUser)
+                .WithMany(u => u.followers)
+                .HasForeignKey(k => k.FolloweeUserId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
 
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

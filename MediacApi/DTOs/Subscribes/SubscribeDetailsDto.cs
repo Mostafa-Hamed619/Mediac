@@ -1,4 +1,4 @@
-﻿namespace MediacApi.DTOs.Followers
+﻿namespace MediacApi.DTOs.Subscribes
 {
     public class SubscribeDetailsDto
     {

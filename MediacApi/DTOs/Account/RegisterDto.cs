@@ -13,6 +13,8 @@ namespace MediacApi.DTOs.Account
         public string LastName { get; set; }
 
         [Required]
+        public string UserName { get; set; }
+        [Required]
         [RegularExpression("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$",ErrorMessage = "Invalid email address")]
         public string Email { get; set; }
         

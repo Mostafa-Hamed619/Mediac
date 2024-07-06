@@ -1,6 +1,6 @@
 ﻿using MediacApi.Data;
 using MediacApi.Data.Entities;
-using MediacApi.DTOs.Followers;
+using MediacApi.DTOs.Subscribes;
 using MediacApi.Services.IRepositories;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;

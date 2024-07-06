@@ -1,15 +1,21 @@
-﻿
-
-using MediacApi.Data.Entities;
+﻿using MediacApi.Data.Entities;
 
 namespace MediacBack.DTOs.Posts
 {
     public class getPostPagingDto
     {
-        public List<Post> Posts { get; set; } = new List<Post>();
+        public Guid Id { get; set; }
 
-        public int Pages { get; set; }
+        public string PostName { get; set; } = string.Empty;
 
-        public int CurrentPage { get; set; }
+        public string firstHeader { get; set; } = string.Empty;
+
+        public string firstBody { get; set; } = string.Empty;
+
+        public bool visible { get; set; }
+
+        public string postImage { get; set; } = string.Empty;
+
+        public string AuthorId { get; set; }
     }
 }

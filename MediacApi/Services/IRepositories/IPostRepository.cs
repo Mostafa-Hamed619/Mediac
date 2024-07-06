@@ -1,4 +1,5 @@
 ﻿using MediacApi.Data.Entities;
+using MediacBack.DTOs.Posts;
 
 namespace MediacBack.Services.IRepositories
 {
@@ -18,7 +19,7 @@ namespace MediacBack.Services.IRepositories
 
         public Task<int> getPostCount();
 
-        public Task<IEnumerable<Post>> Paginationposts(int page);
+        public Task<IEnumerable<getPostPagingDto>> Paginationposts(int page);
 
         public Task<Guid> Getid(string Name);
     }

@@ -1,5 +1,5 @@
 ﻿using MediacApi.Data.Entities;
-using MediacApi.DTOs.Followers;
+using MediacApi.DTOs.Subscribes;
 
 namespace MediacApi.Services.IRepositories
 {
@@ -10,5 +10,7 @@ namespace MediacApi.Services.IRepositories
         public Task AddSubscriber(Guid blogId, string userId);
 
         public Task RemoveSubscriber(Guid blogId, string userId);
+
+        
     }
 }

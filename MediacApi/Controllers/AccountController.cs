@@ -1,9 +1,13 @@
-﻿using MediacApi.Data.Entities;
+﻿using Mailjet.Client.Resources;
+using MediacApi.Data.Entities;
 using MediacApi.DTOs.Account;
+using MediacApi.DTOs.Subscribes;
 using MediacApi.HelperClasses;
 using MediacApi.Services;
+using MediacApi.Services.IRepositories;
 using MediacBack.HelperClasses;
 using MediacBack.Services.IRepositories;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -26,14 +30,17 @@ namespace MediacApi.Controllers
     {
         private readonly IConfiguration config;
         private readonly JWTService jwtService;
-        private readonly UserManager<User> userManager;
-        private readonly SignInManager<User> signInManager;
+        private readonly UserManager<Data.Entities.User> userManager;
+        private readonly SignInManager<Data.Entities.User> signInManager;
         private readonly IFileRespository fileRepo;
         private readonly EmailService emailService;
+        private readonly iUserRepository userRepo;
+        private readonly IConfiguration config1;
 
         public AccountController(IConfiguration config,JWTService jwtService,
-            UserManager<User> userManager,
-            SignInManager<User> signInManager, IFileRespository fileRepo,EmailService emailService)
+            UserManager<Data.Entities.User> userManager,
+            SignInManager<Data.Entities.User> signInManager, IFileRespository fileRepo,EmailService emailService,iUserRepository userRepo
+            ,IConfiguration _config)
         {
             this.config = config;
             this.jwtService = jwtService;
@@ -41,27 +48,29 @@ namespace MediacApi.Controllers
             this.signInManager = signInManager;
             this.fileRepo = fileRepo;
             this.emailService = emailService;
+            this.userRepo = userRepo;
+            config1 = _config;
         }
         [HttpGet("refresh-token")]
         public async Task<ActionResult<userDto>> RefreshUserDto()
         {
             var user = await userManager.FindByIdAsync(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
 
-            return createUserDto(user);
+            return await createUserDto(user);
         }
 
         [HttpPost("Register")]
-        public async Task<ActionResult<User>> Register([FromForm]RegisterDto model)
+        public async Task<ActionResult<Data.Entities.User>> Register([FromForm]RegisterDto model)
         {
-            if (await checkIfUserExists(model.Email)) return BadRequest("This email is already used.");
+            if (await checkIfUserExists(model.Email,model.UserName)) return BadRequest("This email is already used.");
 
             ApiResponse apiResponse = new ApiResponse();
-            var userToAdd = new User()
+            var userToAdd = new Data.Entities.User()
             {
                 Email = model.Email.ToLower(),
                 FirstName = model.FirstName.ToLower(),
                 LastName = model.LastName.ToLower(),
-                UserName = (model.FirstName + model.LastName).ToLower(),
+                UserName = model.UserName.ToLower()
                 
             };
             if (model.photoImage != null)
@@ -110,7 +119,7 @@ namespace MediacApi.Controllers
 
             if (!result.Succeeded) { return Unauthorized("Invalid username or password."); }
 
-            return createUserDto(user);
+            return await createUserDto(user);
         }
 
         [HttpPut("Confirm-Email")]
@@ -233,47 +242,42 @@ namespace MediacApi.Controllers
                 return BadRequest("Failed to send email confirmation. please call the moderators.");
             }
         }
+
         [HttpGet("get-users")]
-        public async Task<ActionResult<IEnumerable<getUserDto>>> GetUsers()
+        [Authorize(policy: "AdminPolicy")]
+        public async Task<ActionResult<IEnumerable<getUsersDto>>> GetUsers()
         {
-            var result = await userManager.Users.Include(p => p.subscribes).ToListAsync();
-         
-            var users = new List<getUserDto>();
-            foreach(var user in result)
-            {
-                var userDto = new getUserDto()
-                {
-                    Id = user.Id,
-                    firstName = user.FirstName,
-                    lastName = user.LastName,
-                    UserName = user.UserName,
-                    PhotoImage = user.PhotoImage,
-                    PhoneNumber = user.PhoneNumber,
-                    subscribes = user.subscribes
-                };
-                users.Add(userDto);
-            }
-          
-            return users;
+            var users = await userRepo.getAllUsers();
+            return Ok(users);
         }
 
+        [HttpGet("Mailjet-apiKey")]
+        public IActionResult getMailJetApiKey()
+        {
+            var result =new
+            {
+                ApiKey = config1["MailJet:APIKey"],
+                SecretKey = config1["MailJet:SecretKey"]
+            };
+            return Ok(result);
+        }
         #region Private Helper Methods
-        private userDto createUserDto(User user)
+        private async Task<userDto> createUserDto(Data.Entities.User user)
         {
             return new userDto
             {
                 FirstName = user.FirstName,
                 LastName = user.LastName,
-                Token = jwtService.CreateJWT(user)
+                Token = await jwtService.CreateJWT(user)
             };
         }
 
-        private async Task<bool> checkIfUserExists(string email)
+        private async Task<bool> checkIfUserExists(string email,string userName)
         {
-            return await userManager.Users.AnyAsync(x => x.Email == email.ToLower());
+            return await userManager.Users.AnyAsync(x => x.Email == email.ToLower() || x.UserName == userName.ToLower());
         }
 
-        private async Task<bool> sendConfirmationEmailAsync(User user)
+        private async Task<bool> sendConfirmationEmailAsync(Data.Entities.User user)
         {
             var token = await userManager.GenerateEmailConfirmationTokenAsync(user);
             token = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
@@ -294,7 +298,7 @@ namespace MediacApi.Controllers
             return await emailService.sendEmail(emailSend);
         }
 
-        private async Task<bool> sendForgotPasswordAsync(User user)
+        private async Task<bool> sendForgotPasswordAsync(Data.Entities.User user)
         {
             var token = await userManager.GeneratePasswordResetTokenAsync(user);
             token = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));

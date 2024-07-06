@@ -16,5 +16,11 @@ namespace MediacApi.Data.Entities
         public ICollection<Post> posts { get; set; }
 
         public ICollection<Subscribe> subscribes { get; set; }
+
+        public virtual ICollection<Followers> followers {  get; set; }
+
+        public virtual ICollection<Followers> followees { get; set; }
+
+        public int FollowerCount {  get; set; }
     }
 }

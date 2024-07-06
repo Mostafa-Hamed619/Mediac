@@ -36,7 +36,8 @@ namespace MediacBack.Controllers
         [HttpGet("get-posts/{page}")]
         public async Task<IActionResult> Posts(int page)
         {
-            if(cache.TryGetValue(PostCacheKey, out IEnumerable<Post>? posts)) 
+            var compositeKey = $"{PostCacheKey}-{page}";
+            if(cache.TryGetValue(compositeKey, out IEnumerable<getPostPagingDto>? posts)) 
             {
                 Log.Information("Posts found in cache");
             }
@@ -63,7 +64,7 @@ namespace MediacBack.Controllers
                             Size = 1
                         };
 
-                        cache.Set(PostCacheKey, posts, cacheEntryOptions);
+                        cache.Set(compositeKey, posts, cacheEntryOptions);
                     }
                 }
                 finally

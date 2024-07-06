@@ -1,8 +1,9 @@
 ﻿using MediacApi.Data.Entities;
+using MediacApi.DTOs.Subscribes;
 
 namespace MediacApi.DTOs.Account
 {
-    public class getUserDto
+    public class getUsersDto
     {
         public string Id { get; set; }
         
@@ -12,10 +13,14 @@ namespace MediacApi.DTOs.Account
 
         public string lastName { get; set; }
 
+        public string Email {  get; set; }
+
         public string PhotoImage { get; set; }
 
         public string PhoneNumber { get; set; }
 
-        public ICollection<Subscribe> subscribes { get; set; }
+        public int FollowersCount { get; set; }
+        
+        public ICollection<SubscribeBlogDto> subscribes { get; set; } = new List<SubscribeBlogDto>();
     }
 }

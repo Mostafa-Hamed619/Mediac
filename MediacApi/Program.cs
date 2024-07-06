@@ -14,6 +14,7 @@ using Microsoft.OpenApi.Models;
 using MediacApi.Middleware;
 using MediacApi.Services.IRepositories;
 using MediacApi.Services.MockRepositories;
+using MediacApi.PayPalClient;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,8 +39,22 @@ builder.Services.AddScoped<IFileRespository, FileMockRepository>();
 builder.Services.AddScoped<IPostRepository,PostMockRepositories>();
 builder.Services.AddSingleton<ihttpAccessor, MockIhttpAccessor>();
 builder.Services.AddScoped<ISubscribeRepo, SubscribeMockRepo>();
+builder.Services.AddScoped<iUserRepository, UserMockRepository>();
 builder.Services.AddScoped<EmailService>();
+builder.Services.AddSingleton(x =>
+new PayPalClientDto(
+    builder.Configuration["PayPal:ClientID"],
+    builder.Configuration["PayPal:Secret"],
+    builder.Configuration["PayPal:Mode"]
+    )
+);
 
+builder.Services.AddScoped<IFollowRepository,  FollowMockRepository>();
+builder.Services.AddAuthorization(opt =>
+{
+    opt.AddPolicy("AdminPolicy", policy => policy.RequireRole("Admin"));
+    opt.AddPolicy("UserPolicy", policy => policy.RequireRole("User"));
+});
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>

@@ -4,6 +4,7 @@ using MediacApi.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MediacApi.Migrations
 {
     [DbContext(typeof(MediacDbContext))]
-    partial class MediacDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240705002705_AddFollowerDatabase")]
+    partial class AddFollowerDatabase
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -179,9 +182,6 @@ namespace MediacApi.Migrations
                     b.Property<string>("FirstName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("FollowerCount")
-                        .HasColumnType("int");
 
                     b.Property<string>("LastName")
                         .IsRequired()

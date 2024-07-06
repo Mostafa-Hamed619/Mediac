@@ -1,5 +1,5 @@
 ﻿using MediacApi.Data.Entities;
-using MediacApi.DTOs.Followers;
+using MediacApi.DTOs.Subscribes;
 using MediacApi.Services.IRepositories;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;

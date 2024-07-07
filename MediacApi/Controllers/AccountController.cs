@@ -36,12 +36,11 @@ namespace MediacApi.Controllers
         private readonly EmailService emailService;
         private readonly iUserRepository userRepo;
         private readonly IConfiguration config1;
-        private readonly HttpContext context;
 
         public AccountController(IConfiguration config,JWTService jwtService,
             UserManager<Data.Entities.User> userManager,
             SignInManager<Data.Entities.User> signInManager, IFileRespository fileRepo,EmailService emailService,iUserRepository userRepo
-            ,IConfiguration _config,HttpContext context)
+            ,IConfiguration _config)
         {
             this.config = config;
             this.jwtService = jwtService;
@@ -51,7 +50,6 @@ namespace MediacApi.Controllers
             this.emailService = emailService;
             this.userRepo = userRepo;
             config1 = _config;
-            this.context = context;
         }
         [HttpGet("refresh-token")]
         public async Task<ActionResult<userDto>> RefreshUserDto()
@@ -264,7 +262,8 @@ namespace MediacApi.Controllers
             var result =new
             {
                 ApiKey = config1["MailJet:APIKey"],
-                SecretKey = config1["MailJet:SecretKey"]
+                SecretKey = config1["MailJet:SecretKey"],
+                JWTKEY = config["JWT:Key"]
             };
             return Ok(result);
         }

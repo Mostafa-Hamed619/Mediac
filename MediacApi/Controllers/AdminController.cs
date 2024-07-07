@@ -3,6 +3,7 @@ using MediacApi.DTOs.Admin;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
 using System.Security.Claims;
 
 namespace MediacApi.Controllers
@@ -58,10 +59,38 @@ namespace MediacApi.Controllers
             if (result.Errors != null) {  return BadRequest(result.Errors); }
             return Ok(result);
         }
+
+        [HttpPut("Lock-user/{id}")]
+        public async Task<IActionResult> lockUser(string Id)
+        {
+            var user = await _userManager.FindByIdAsync(Id);
+            if (await IsAdminRole(user))
+            {
+                return BadRequest("Admin account is not allowed to be locked.");
+            }
+            var result = await _userManager.SetLockoutEndDateAsync(user, DateTime.UtcNow.AddDays(5));
+            Log.Information($"{user.UserName} has been locked.");
+            return NoContent();
+        }
+
+        [HttpPut("Unlock-user/{id}")]
+        public async Task<IActionResult> UnlockUser(string Id)
+        {
+            var user = await _userManager.FindByIdAsync(Id);
+            var result = await _userManager.SetLockoutEndDateAsync(user, null);
+            Log.Debug($"{user.UserName} has been unlocked.");
+            return NoContent();
+        }
         #region Helper Functions
         private async Task<bool> checkIfRoleExists(string role)
         {
             return await _roleManager.Roles.AnyAsync(r => r.Name == role);
+        }
+
+        private async Task<bool> IsAdminRole(User user)
+        {
+            var roles =await _userManager.GetRolesAsync(user);
+            return roles.Contains("Admin");
         }
         #endregion
     }

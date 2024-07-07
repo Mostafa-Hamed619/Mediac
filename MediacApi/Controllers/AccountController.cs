@@ -36,11 +36,12 @@ namespace MediacApi.Controllers
         private readonly EmailService emailService;
         private readonly iUserRepository userRepo;
         private readonly IConfiguration config1;
+        private readonly HttpContext context;
 
         public AccountController(IConfiguration config,JWTService jwtService,
             UserManager<Data.Entities.User> userManager,
             SignInManager<Data.Entities.User> signInManager, IFileRespository fileRepo,EmailService emailService,iUserRepository userRepo
-            ,IConfiguration _config)
+            ,IConfiguration _config,HttpContext context)
         {
             this.config = config;
             this.jwtService = jwtService;
@@ -50,6 +51,7 @@ namespace MediacApi.Controllers
             this.emailService = emailService;
             this.userRepo = userRepo;
             config1 = _config;
+            this.context = context;
         }
         [HttpGet("refresh-token")]
         public async Task<ActionResult<userDto>> RefreshUserDto()
@@ -114,8 +116,13 @@ namespace MediacApi.Controllers
             if(user == null) { return Unauthorized("User is not existing, you can register");}
 
             if (user.EmailConfirmed == false) return Unauthorized("Email is not confirmed, you have to confirm your email first");
-
+            
             var result = await signInManager.CheckPasswordSignInAsync(user, model.Password, false);
+
+            if (result.IsLockedOut)
+            {
+                return Unauthorized("Account is locked.");
+            }
 
             if (!result.Succeeded) { return Unauthorized("Invalid username or password."); }
 

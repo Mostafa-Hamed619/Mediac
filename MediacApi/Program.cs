@@ -14,7 +14,9 @@ using Microsoft.OpenApi.Models;
 using MediacApi.Middleware;
 using MediacApi.Services.IRepositories;
 using MediacApi.Services.MockRepositories;
-using MediacApi.PayPalClient;
+using MediacApi.Extensions;
+using Asp.Versioning;
+using MediacApi.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,6 +35,7 @@ builder.Services.AddDbContextPool<MediacDbContext>(opt =>
 });
 
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
 builder.Services.AddScoped<JWTService>();
 builder.Services.AddScoped<IBlogRepository, BlogMockRepository>();
 builder.Services.AddScoped<IFileRespository, FileMockRepository>();
@@ -40,14 +43,9 @@ builder.Services.AddScoped<IPostRepository,PostMockRepositories>();
 builder.Services.AddSingleton<ihttpAccessor, MockIhttpAccessor>();
 builder.Services.AddScoped<ISubscribeRepo, SubscribeMockRepo>();
 builder.Services.AddScoped<iUserRepository, UserMockRepository>();
+builder.Services.AddScoped<ICommentRepository, CommentMockRepository>();
 builder.Services.AddScoped<EmailService>();
-builder.Services.AddSingleton(x =>
-new PayPalClientDto(
-    builder.Configuration["PayPal:ClientID"],
-    builder.Configuration["PayPal:Secret"],
-    builder.Configuration["PayPal:Mode"]
-    )
-);
+
 
 builder.Services.AddScoped<IFollowRepository,  FollowMockRepository>();
 builder.Services.AddAuthorization(opt =>
@@ -55,6 +53,22 @@ builder.Services.AddAuthorization(opt =>
     opt.AddPolicy("AdminPolicy", policy => policy.RequireRole("Admin"));
     opt.AddPolicy("UserPolicy", policy => policy.RequireRole("User"));
 });
+builder.Services.AddApiVersioning(o =>
+{
+    o.AssumeDefaultVersionWhenUnspecified = true;
+    o.ReportApiVersions = true;
+    o.DefaultApiVersion = new ApiVersion(1, 0);
+    o.ApiVersionReader = ApiVersionReader.Combine(
+        new QueryStringApiVersionReader("api-version"),
+        new HeaderApiVersionReader("X-Version"),
+        new MediaTypeApiVersionReader("ver")
+        );
+}).AddApiExplorer(options =>
+{
+    options.GroupNameFormat = "'v'VVV";
+    options.SubstituteApiVersionInUrl = true;
+});
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -168,12 +182,16 @@ app.UseAuthentication();
 
 
 app.UseMiddleware<userInfoMiddleware>();
+
+app.ConfigureCustomExceptionMiddleware();
 app.UseAuthorization();
 app.UseCors("AllowSpecificOrigin");
 app.UseCors(opt =>
 {
     opt.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
 });
+
+app.MapHub<CommentHub>("/Comment");
 app.MapControllers();
 
 app.Run();

@@ -1,4 +1,6 @@
-﻿using MediacApi.Data.Entities;
+﻿using Asp.Versioning;
+using MediacApi.Data.Entities;
+using MediacApi.DTOs.Posts;
 using MediacApi.Services.IRepositories;
 using MediacBack.DTOs.Posts;
 using MediacBack.HelperClasses;
@@ -15,6 +17,7 @@ namespace MediacBack.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [ApiVersion("1.0")]
     public class PostController : ControllerBase
     {
         private const string PostCacheKey = "PostList";
@@ -46,7 +49,7 @@ namespace MediacBack.Controllers
                 try
                 {
                     await semaphore.WaitAsync();
-                    if (cache.TryGetValue(PostCacheKey, out posts))
+                    if (cache.TryGetValue(compositeKey, out posts))
                     {
                         Log.Information("Posts found in cache");
                     }
@@ -54,6 +57,7 @@ namespace MediacBack.Controllers
                     {
                         Log.Information("Posts not found in  cahce.Fetching from database.");
 
+                        //throw new Exception("Exception while fetching user's posts from the storage.");
                         posts = await postRepo.Paginationposts(page);
 
                         var cacheEntryOptions = new MemoryCacheEntryOptions
@@ -149,11 +153,19 @@ namespace MediacBack.Controllers
             }
         }
 
-        [HttpGet]
+        [HttpGet("Search-Post-Blog")]
         public async Task<ActionResult<Guid>> getId(string Name)
         {
-            var result = postRepo.Getid(Name);
+            var result =await postRepo.Getid(Name);
             return Ok(result);
+        }
+
+        [HttpGet("Search-Post-Blog-Name")]
+        public async Task<IEnumerable<PostBlogSearch>> searches(string search)
+        {
+            var result = await postRepo.postBlogSearches(search);
+
+            return result;
         }
     }
 }

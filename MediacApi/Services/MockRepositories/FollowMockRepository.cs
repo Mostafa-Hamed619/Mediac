@@ -1,4 +1,5 @@
-﻿using MediacApi.Data;
+﻿using Mailjet.Client.Resources;
+using MediacApi.Data;
 using MediacApi.Data.Entities;
 using MediacApi.DTOs.Account;
 using MediacApi.DTOs.Followers;
@@ -80,6 +81,45 @@ namespace MediacApi.Services.MockRepositories
                 usersDto.Add(userDto);
             }
             return usersDto;
+        }
+
+        public async Task<IEnumerable<getFollowerDto>> getFollowerAsync(string Id)
+        {
+            var usersDto = new List<getFollowerDto>();
+            var followers = await db.followers.Where(f => f.FolloweeUserId == Id).Select(f => f.FollowerUser).ToListAsync();
+
+            foreach (var follower in followers)
+            {
+                var userDto = new getFollowerDto()
+                {
+                    Email = follower.Email,
+                    PhotoImage = follower.PhotoImage,
+                    UserName = follower.UserName,
+                    Id = Id
+                };
+
+                usersDto.Add(userDto);
+            }
+            return usersDto;
+        }
+
+        public async Task FollowWithUser(string userName, string authorEmail)
+        {
+            string userId =  (await db.Users.FirstOrDefaultAsync(u => u.UserName == userName)).Id;
+            authorEmail = "hamedmostafa726@gmail.com";
+            var author = await db.Users.FirstOrDefaultAsync(u => u.Email == authorEmail);
+            string authorId = author.Id;
+            var follow = new Followers()
+            {
+                FolloweeUserId = authorId,
+                FollowerUserId = userId,
+            };
+
+            author.FollowerCount += 1;
+            await db.followers.AddAsync(follow);
+            await db.SaveChangesAsync();
+
+            
         }
     }
 }

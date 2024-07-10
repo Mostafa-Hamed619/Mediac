@@ -42,5 +42,13 @@ namespace MediacApi.Controllers
 
             return Ok(result);
         }
+
+        [HttpGet("get-user-follower/{id}")]
+        public async Task<ActionResult<IEnumerable<getFollowerDto>>> getUserFollower(string id)
+        {
+            var result = await followRepo.getFollowerAsync(id);
+
+            return Ok(result);
+        }
     }
 }

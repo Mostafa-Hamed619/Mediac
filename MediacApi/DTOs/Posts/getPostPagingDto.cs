@@ -17,5 +17,9 @@ namespace MediacBack.DTOs.Posts
         public string postImage { get; set; } = string.Empty;
 
         public string AuthorId { get; set; }
+
+        public string AuthorName { get; set; }
+
+        public string AuthorImage {  get; set; }
     }
 }

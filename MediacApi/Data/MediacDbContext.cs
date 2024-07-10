@@ -23,6 +23,7 @@ namespace MediacApi.Data
         public DbSet<AuditLog> AuditLogs { get; set; }
         public DbSet<Subscribe> subscribes { get; set; }
         public DbSet<Followers> followers { get; set; }
+        public DbSet<Comments> Comments {  get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -44,6 +45,9 @@ namespace MediacApi.Data
 
             modelBuilder.Entity<Followers>()
                 .HasKey(e => new { e.FollowerUserId, e.FolloweeUserId });
+
+            modelBuilder.Entity<Comments>()
+                .HasKey(c => c.Id);
            
             modelBuilder.Entity<Post>()
                 .HasOne(b => b.Blog)
@@ -76,6 +80,16 @@ namespace MediacApi.Data
                 .WithMany(u => u.followers)
                 .HasForeignKey(k => k.FolloweeUserId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Comments>()
+                .HasOne(c => c.user)
+                .WithMany(u => u.comments)
+                .HasForeignKey(c => c.userId);
+
+            modelBuilder.Entity<Comments>()
+                .HasOne(c => c.post)
+                .WithMany(p => p.comments)
+                .HasForeignKey(c => c.postId);
         }
 
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
@@ -117,8 +131,6 @@ namespace MediacApi.Data
 
             return sb.ToString();
         }
-    }
-
-     
+    } 
     
 }

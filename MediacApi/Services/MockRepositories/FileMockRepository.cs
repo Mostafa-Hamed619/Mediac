@@ -42,7 +42,7 @@ namespace MediacBack.Services.MockRepositories
                 stream.Close();
                 return new Tuple<int, string>(1, newFileName);
             }
-            catch (Exception ex)
+            catch
             {
                 return new Tuple<int,string>(0,"Error has occured");
             }
@@ -62,7 +62,7 @@ namespace MediacBack.Services.MockRepositories
 
                 return false;
             }
-            catch(Exception ex) { return false; }
+            catch{ return false; }
         }
     }
 }

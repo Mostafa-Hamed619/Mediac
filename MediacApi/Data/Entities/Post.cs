@@ -21,6 +21,8 @@ namespace MediacApi.Data.Entities
         public string postImage {  get; set; } = string.Empty;
 
         public List<string> Refrences {  get; set; } = new List<string>();
+
+        public ICollection<Comments> comments { get; set; }
         
         public Guid BlogNumber { get; set; }
 

@@ -21,6 +21,8 @@ namespace MediacApi.Data.Entities
 
         public virtual ICollection<Followers> followees { get; set; }
 
+        public virtual ICollection<Comments> comments { get; set; }
+
         public int FollowerCount {  get; set; }
     }
 }

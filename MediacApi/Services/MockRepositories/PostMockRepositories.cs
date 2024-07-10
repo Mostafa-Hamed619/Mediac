@@ -1,6 +1,7 @@
 ﻿using MediacApi.Data;
 using MediacApi.Data.Entities;
 using MediacApi.DTOs.Blogs;
+using MediacApi.DTOs.Posts;
 using MediacApi.Services.IRepositories;
 using MediacBack.DTOs.Posts;
 using MediacBack.Services.IRepositories;
@@ -76,20 +77,65 @@ namespace MediacBack.Services.MockRepositories
                     _db.Posts,
                     ub => ub.Id,
                     p => p.BlogNumber,
-                    (ub, p) => new getPostPagingDto
+                    (ub, p) => new {userBlog = ub , post = p}
+                )
+                .Join(
+                    _db.Users,
+                    u => u.post.AuthorId,
+                    up => up.Id,
+                    (u, up) => new getPostPagingDto
                     {
-                        Id = p.Id,
-                        AuthorId = p.AuthorId,
-                        PostName = p.PostName,
-                        postImage = p.postImage,
-                        firstHeader = p.firstHeader,
-                        firstBody = p.firstBody,
-                        visible = p.visible
+                        Id = u.post.Id,
+                        AuthorId = u.post.AuthorId,
+                        AuthorName = up.UserName,
+                        AuthorImage = up.PhotoImage,
+                        postImage = u.post.postImage,
+                        PostName = u.post.PostName,
+                        firstHeader = u.post.firstHeader,
+                        firstBody = u.post.firstBody,
+                        visible = u.post.visible,
                     }
                 ).ToList();
 
             var pageSize = Math.Ceiling(posts.Count() / pageResult);
             var result = posts.Skip((page - 1) * (int)pageResult).Take((int)pageResult).ToList();
+
+            return result;
+        }
+
+        public async Task<IEnumerable<PostBlogSearch>> postBlogSearches(string postBlog)
+        {
+            var result = await _db.Posts
+                .Join(
+                _db.Blogs,
+                p => p.BlogNumber,
+                b => b.Id,
+                (p, b) => new { post = p, blog = b }
+                ).Where(pb => pb.post.PostName == postBlog || pb.blog.blogName == postBlog)
+                .Join(
+                _db.Users,
+                pb => pb.post.AuthorId,
+                u => u.Id,
+                (pb, u) => new PostBlogSearch
+                {
+                    BlogId = pb.blog.Id,
+                    BlogDescription = pb.blog.blogDescription,
+                    BlogImage = pb.blog.blogImage,
+                    BlogName = pb.blog.blogName,
+                    PostAuthor = u.UserName,
+                    AuthorImage = u.PhotoImage,
+                    Posts = pb.blog.posts != null?
+                    pb.blog.posts.Select( p =>new getPostDto
+                    {
+                        AuthorId = p.AuthorId,
+                        Id = pb.post.Id,
+                        PostImage = pb.post.postImage,
+                        PostName = pb.post.PostName,
+                        Visible = pb.post.visible
+                    }).ToList()
+                    : new List<getPostDto>()
+                }
+                ).ToListAsync();
 
             return result;
         }

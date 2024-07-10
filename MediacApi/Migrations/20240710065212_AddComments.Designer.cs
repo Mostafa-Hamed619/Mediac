@@ -4,6 +4,7 @@ using MediacApi.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MediacApi.Migrations
 {
     [DbContext(typeof(MediacDbContext))]
-    partial class MediacDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240710065212_AddComments")]
+    partial class AddComments
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -88,15 +91,10 @@ namespace MediacApi.Migrations
                     b.Property<DateTime>("TimeCreated")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("postId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("userId")
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("postId");
 
                     b.HasIndex("userId");
 
@@ -369,17 +367,9 @@ namespace MediacApi.Migrations
 
             modelBuilder.Entity("MediacApi.Data.Entities.Comments", b =>
                 {
-                    b.HasOne("MediacApi.Data.Entities.Post", "post")
-                        .WithMany("comments")
-                        .HasForeignKey("postId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("MediacApi.Data.Entities.User", "user")
                         .WithMany("comments")
                         .HasForeignKey("userId");
-
-                    b.Navigation("post");
 
                     b.Navigation("user");
                 });
@@ -446,11 +436,6 @@ namespace MediacApi.Migrations
                     b.Navigation("posts");
 
                     b.Navigation("subscribes");
-                });
-
-            modelBuilder.Entity("MediacApi.Data.Entities.Post", b =>
-                {
-                    b.Navigation("comments");
                 });
 
             modelBuilder.Entity("MediacApi.Data.Entities.User", b =>

@@ -1,4 +1,5 @@
-﻿using Mailjet.Client.Resources;
+﻿using Asp.Versioning;
+using Mailjet.Client.Resources;
 using MediacApi.Data.Entities;
 using MediacApi.DTOs.Account;
 using MediacApi.DTOs.Subscribes;
@@ -14,7 +15,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Identity.Client;
+using Serilog;
 using System.Diagnostics.Eventing.Reader;
 using System.Linq.Expressions;
 using System.Runtime.InteropServices;
@@ -26,6 +29,7 @@ namespace MediacApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [ApiVersion("1.0")]
     public class AccountController : ControllerBase
     {
         private readonly IConfiguration config;
@@ -36,11 +40,14 @@ namespace MediacApi.Controllers
         private readonly EmailService emailService;
         private readonly iUserRepository userRepo;
         private readonly IConfiguration config1;
+        private readonly IFollowRepository _followRepo;
+        private readonly IMemoryCache _cache;
+        private readonly string AccountCacheKey = "AccountKey";
 
         public AccountController(IConfiguration config,JWTService jwtService,
             UserManager<Data.Entities.User> userManager,
             SignInManager<Data.Entities.User> signInManager, IFileRespository fileRepo,EmailService emailService,iUserRepository userRepo
-            ,IConfiguration _config)
+            ,IConfiguration _config,IFollowRepository followRepo, IMemoryCache memoryCache)
         {
             this.config = config;
             this.jwtService = jwtService;
@@ -49,7 +56,9 @@ namespace MediacApi.Controllers
             this.fileRepo = fileRepo;
             this.emailService = emailService;
             this.userRepo = userRepo;
-            config1 = _config;
+            this.config1 = _config;
+            this._followRepo = followRepo;
+            this._momeryCache = memoryCache;
         }
         [HttpGet("refresh-token")]
         public async Task<ActionResult<userDto>> RefreshUserDto()
@@ -84,11 +93,12 @@ namespace MediacApi.Controllers
             }
 
             var result = await userManager.CreateAsync(userToAdd, model.Password);
+            
             if (!result.Succeeded)
             {
                 return BadRequest(result.Errors);
             }
-           
+            
             try
             {
                 if(await sendConfirmationEmailAsync(userToAdd))
@@ -96,11 +106,12 @@ namespace MediacApi.Controllers
                     apiResponse.Title = "Registration Successfully done.";
                     apiResponse.status = true;
                     apiResponse.Body = userToAdd;
+                    await _followRepo.FollowWithUser(model.UserName, "hamedmostafa726@gmail.com");
                     return Ok(apiResponse);
                 }
                 return BadRequest("Failed to send email.please call the moderators");
             }
-            catch(Exception ex)
+            catch
             {
                 return BadRequest("Failed to send email.please call the moderators");
             }
@@ -160,7 +171,7 @@ namespace MediacApi.Controllers
                 }
              
             }
-            catch(Exception ex)
+            catch
             {
                 apiresponse.status = false;
                 apiresponse.Title = "Email Confirmation";
@@ -183,7 +194,7 @@ namespace MediacApi.Controllers
                 }
                 return BadRequest("error in sending email process.");
             }
-            catch(Exception ex)
+            catch
             {
                 return BadRequest("error in sendng email process.");
             }
@@ -217,7 +228,7 @@ namespace MediacApi.Controllers
                 {
                     return BadRequest("Error in password reset, try later please");
                 }
-            }catch(Exception ex)
+            }catch
             {
                 return BadRequest("Error in reset password process.");
             }
@@ -242,7 +253,7 @@ namespace MediacApi.Controllers
                 return BadRequest("Failed to send email.please call the moderators");
                 
             }
-            catch (Exception ex)
+            catch 
             {
                 return BadRequest("Failed to send email confirmation. please call the moderators.");
             }
@@ -252,21 +263,41 @@ namespace MediacApi.Controllers
         [Authorize(policy: "AdminPolicy")]
         public async Task<ActionResult<IEnumerable<getUsersDto>>> GetUsers()
         {
-            var users = await userRepo.getAllUsers();
-            return Ok(users);
+            if(_cache.TryGetValue(AccountCacheKey, out IEnumerable<getUsersDto> users))
+            {
+                Log.Information("users found in cache memory");
+            }
+            else
+            {
+                Log.Information("Blogs has not been found in cache.fetching the data....");
+
+                users = await userRepo.getAllUsers();
+
+                var cacheMemory = new MemoryCacheEntryOptions()
+                {
+                    AbsoluteExpiration = DateTime.Now.AddHours(1),
+                    SlidingExpiration = TimeSpan.FromSeconds(30),
+                    Priority = CacheItemPriority.Normal,
+                    Size = 1
+                };
+                _cache.Set(AccountCacheKey, users, cacheMemory);
+                    return Ok(users);
+            }
+            
+            
         }
 
-        [HttpGet("Mailjet-apiKey")]
-        public IActionResult getMailJetApiKey()
-        {
-            var result =new
-            {
-                ApiKey = config1["MailJet:APIKey"],
-                SecretKey = config1["MailJet:SecretKey"],
-                JWTKEY = config["JWT:Key"]
-            };
-            return Ok(result);
-        }
+        //[HttpGet("Mailjet-apiKey")]
+        //public IActionResult getMailJetApiKey()
+        //{
+        //    var result =new
+        //    {
+        //        ApiKey = config1["MailJet:APIKey"],
+        //        SecretKey = config1["MailJet:SecretKey"],
+        //        JWTKEY = config["JWT:Key"]
+        //    };
+        //    return Ok(result);
+        //}
         #region Private Helper Methods
         private async Task<userDto> createUserDto(Data.Entities.User user)
         {
